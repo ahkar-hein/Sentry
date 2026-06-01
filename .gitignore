@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment variables - NEVER commit these
+.env
+*.env
+
+# Python virtual environment
+venv/
+env/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build output
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# MongoDB data
+data/
+
+# Python cache
+.pytest_cache/
+*.egg-info/
