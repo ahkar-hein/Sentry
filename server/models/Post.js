@@ -2,22 +2,22 @@ const mongoose = require("mongoose");
 
 const postSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  city: { type: String, required: true }, // which community this post belongs to
+  city: { type: String, required: true },
   type: {
     type: String,
-    enum: ["status", "photo", "video", "live", "location"],
+    enum: ["status", "photo", "video", "location"],
     default: "status"
   },
   content: { type: String, default: "" },
-  mediaUrl: { type: String, default: "" },  // Cloudinary URL for photos/videos
+  mediaUrl: { type: String, default: "" },
   location: {
     lat: Number,
     lng: Number,
     address: String,
   },
-  tags: [{ type: String }], // AI auto-generated tags
+  tags: [{ type: String }],
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  // AI flagged this as potential emergency
+  commentCount: { type: Number, default: 0 },
   flaggedByAI: { type: Boolean, default: false },
 }, { timestamps: true });
 
