@@ -13,6 +13,7 @@ const chatRoutes = require("./routes/chat");
 const communityRoutes = require("./routes/communities");
 const aiRoutes = require("./routes/ai");
 const uploadRoutes = require("./routes/upload");
+const userRoutes = require("./routes/users");
 
 const app = express();
 const server = http.createServer(app); // needed for Socket.io
@@ -34,6 +35,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/communities", communityRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => res.json({ message: "Sentry API running" }));
 

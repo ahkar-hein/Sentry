@@ -2,53 +2,35 @@ import { useState, useEffect, useRef } from "react";
 import api from "../../utils/api";
 import socket from "../../utils/socket";
 
-export default function GroupChat({ user }) {
+export default function PrivateChat({ user, recipient, onBack }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
-  const [onlineCount, setOnlineCount] = useState(1);
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    // Load chat history
-    api.get(`/chat/group/${user.homeCity}`)
+    // Load private chat history
+    api.get(`/chat/private/${recipient._id}`)
       .then((r) => setMessages(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
 
-    // Listen for new group messages
-    socket.on("new_group_message", (msg) => {
-      setMessages((prev) => {
-        // Avoid duplicates
-        if (prev.find((m) => m._id === msg._id)) return prev;
-        return [...prev, msg];
-      });
-    });
-
-    // Emergency alerts appear in chat
-    socket.on("new_emergency_alert", (alert) => {
-      if (alert.city === user.homeCity) {
-        setMessages((prev) => [...prev, {
-          _id: alert.alertId || Date.now(),
-          sender: { name: "🚨 SENTRY ALERT" },
-          content: `EMERGENCY: ${alert.type?.toUpperCase()} reported nearby. Stay safe!`,
-          type: "alert",
-          createdAt: new Date(),
-        }]);
+    // Listen for incoming private messages
+    socket.on("new_private_message", (msg) => {
+      const isRelevant =
+        (msg.sender?._id === recipient._id) ||
+        (msg.sender?._id === user.id);
+      if (isRelevant) {
+        setMessages((prev) => {
+          if (prev.find((m) => m._id === msg._id)) return prev;
+          return [...prev, msg];
+        });
       }
     });
 
-    // Track online users
-    socket.on("online_count", (count) => setOnlineCount(count));
+    return () => socket.off("new_private_message");
+  }, [recipient._id]);
 
-    return () => {
-      socket.off("new_group_message");
-      socket.off("new_emergency_alert");
-      socket.off("online_count");
-    };
-  }, [user.homeCity]);
-
-  // Auto scroll to bottom on new message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -59,21 +41,21 @@ export default function GroupChat({ user }) {
     setInput("");
 
     try {
-      const { data } = await api.post("/chat/group", {
+      const { data } = await api.post("/chat/private", {
         content,
-        city: user.homeCity,
+        recipientId: recipient._id,
       });
 
       // Emit to socket for real-time delivery
-      socket.emit("group_message", {
+      socket.emit("private_message", {
         ...data,
-        city: user.homeCity,
+        recipientId: recipient._id,
+        senderId: user.id,
       });
 
-      // Add to local messages immediately
       setMessages((prev) => [...prev, data]);
     } catch (err) {
-      console.error("Send message failed:", err);
+      console.error("Send private message failed:", err);
     }
   };
 
@@ -90,18 +72,19 @@ export default function GroupChat({ user }) {
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
 
       {/* Header */}
-      <div style={{ padding: "12px 16px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>
-            🏘️ {user.homeCity} Community
-          </p>
-          <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
-            Group chat — all neighbors
-          </p>
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 12 }}>
+        <button
+          onClick={onBack}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#1d4ed8", fontSize: 20, padding: 0, lineHeight: 1 }}
+        >
+          ←
+        </button>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#1d4ed8", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 15 }}>
+          {recipient.name?.[0]?.toUpperCase()}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
-          <span style={{ fontSize: 12, color: "#6b7280" }}>{onlineCount} online</span>
+        <div>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>{recipient.name}</p>
+          <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>Private message</p>
         </div>
       </div>
 
@@ -111,27 +94,14 @@ export default function GroupChat({ user }) {
           <p style={{ color: "#9ca3af", fontSize: 13, textAlign: "center" }}>Loading messages...</p>
         ) : messages.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>
-            <p style={{ fontSize: 32, margin: "0 0 8px" }}>💬</p>
-            <p style={{ fontSize: 14 }}>No messages yet. Say hello to your neighbors!</p>
+            <p style={{ fontSize: 32, margin: "0 0 8px" }}>👋</p>
+            <p style={{ fontSize: 14 }}>Start a conversation with {recipient.name}</p>
           </div>
         ) : (
           messages.map((msg, i) => {
             const mine = isMyMessage(msg);
-            const isAlert = msg.type === "alert";
-
-            if (isAlert) return (
-              <div key={msg._id || i} style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#dc2626", fontWeight: 600, textAlign: "center" }}>
-                {msg.content}
-              </div>
-            );
-
             return (
               <div key={msg._id || i} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start" }}>
-                {!mine && (
-                  <span style={{ fontSize: 11, color: "#9ca3af", marginBottom: 2, marginLeft: 4 }}>
-                    {msg.sender?.name}
-                  </span>
-                )}
                 <div style={{ maxWidth: "70%", padding: "8px 12px", borderRadius: mine ? "12px 12px 4px 12px" : "12px 12px 12px 4px", background: mine ? "#1d4ed8" : "#f3f4f6", color: mine ? "#fff" : "#111", fontSize: 14 }}>
                   {msg.content}
                 </div>
@@ -151,7 +121,7 @@ export default function GroupChat({ user }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          placeholder="Message your community..."
+          placeholder={`Message ${recipient.name}...`}
           style={{ flex: 1, padding: "10px 14px", border: "1px solid #e5e7eb", borderRadius: 24, fontSize: 14, outline: "none" }}
         />
         <button

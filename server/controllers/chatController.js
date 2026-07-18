@@ -13,6 +13,22 @@ const getGroupMessages = async (req, res) => {
   }
 };
 
+// POST /api/chat/group — save group message
+const saveGroupMessage = async (req, res) => {
+  const { content, city } = req.body;
+  try {
+    const message = await Message.create({
+      sender: req.user.id,
+      city,
+      content,
+    });
+    await message.populate("sender", "name avatar");
+    res.status(201).json(message);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // GET /api/chat/private/:userId — load private chat history
 const getPrivateMessages = async (req, res) => {
   const myId = req.user.id;
@@ -34,23 +50,7 @@ const getPrivateMessages = async (req, res) => {
   }
 };
 
-// POST /api/chat/group — save group message to DB
-const saveGroupMessage = async (req, res) => {
-  const { content, city } = req.body;
-  try {
-    const message = await Message.create({
-      sender: req.user.id,
-      city,
-      content,
-    });
-    await message.populate("sender", "name avatar");
-    res.status(201).json(message);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// POST /api/chat/private — save private message to DB
+// POST /api/chat/private — save private message
 const savePrivateMessage = async (req, res) => {
   const { content, recipientId } = req.body;
   try {
@@ -58,6 +58,7 @@ const savePrivateMessage = async (req, res) => {
       sender: req.user.id,
       recipient: recipientId,
       content,
+      city: null,
     });
     await message.populate("sender", "name avatar");
     res.status(201).json(message);
@@ -66,4 +67,4 @@ const savePrivateMessage = async (req, res) => {
   }
 };
 
-module.exports = { getGroupMessages, getPrivateMessages, saveGroupMessage, savePrivateMessage };
+module.exports = { getGroupMessages, saveGroupMessage, getPrivateMessages, savePrivateMessage };
