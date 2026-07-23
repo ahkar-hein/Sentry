@@ -21,7 +21,7 @@ const server = http.createServer(app);
 initSocket(server);
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "*",
   credentials: true
 }));
 app.use(express.json());
@@ -35,7 +35,6 @@ app.use("/api/communities", communityRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/users", userRoutes);
-
 app.get("/", (req, res) => res.json({ message: "Sentry API running" }));
 
 mongoose
