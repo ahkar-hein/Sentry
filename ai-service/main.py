@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import chat, classify, safety
+from routers import chat, classify, safety, patterns
 
 app = FastAPI(title="Sentry AI Service")
 
@@ -14,6 +14,7 @@ app.add_middleware(
 app.include_router(chat.router)
 app.include_router(classify.router)
 app.include_router(safety.router)
+app.include_router(patterns.router)
 
 @app.get("/")
 def root():

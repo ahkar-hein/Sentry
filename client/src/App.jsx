@@ -7,6 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import HomePage from "./pages/HomePage";
 import ExplorePage from "./pages/ExplorePage";
 import ChatPage from "./pages/ChatPage";
+import AIPage from "./pages/AIPage";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ function AppRoutes() {
         <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+        <Route path="/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
       </Routes>
     </CallProvider>
   );
