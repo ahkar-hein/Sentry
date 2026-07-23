@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { CallProvider } from "./context/CallContext";
 import Navbar from "./components/layout/Navbar";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -15,7 +16,7 @@ const ProtectedRoute = ({ children }) => {
 function AppRoutes() {
   const { user } = useAuth();
   return (
-    <>
+    <CallProvider user={user}>
       <Navbar />
       <Routes>
         <Route path="/" element={<Navigate to={user ? "/home" : "/login"} />} />
@@ -25,7 +26,7 @@ function AppRoutes() {
         <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       </Routes>
-    </>
+    </CallProvider>
   );
 }
 

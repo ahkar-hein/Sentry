@@ -13,7 +13,6 @@ const initSocket = (server) => {
       socket.join(userId);
     });
 
-    // New post — broadcast to city
     socket.on("new_post", (post) => {
       socket.to(post.city).emit("new_post", post);
     });
@@ -31,16 +30,29 @@ const initSocket = (server) => {
       io.to(data.city).emit("new_emergency_alert", data);
     });
 
+    // WebRTC signaling
     socket.on("call_user", (data) => {
-      io.to(data.recipientId).emit("incoming_call", data);
+      io.to(data.recipientId).emit("incoming_call", {
+        from: data.from,
+        callerName: data.callerName,
+        offer: data.offer,
+      });
     });
 
     socket.on("answer_call", (data) => {
-      io.to(data.to).emit("call_accepted", { signal: data.signal });
+      io.to(data.to).emit("call_answered", { answer: data.answer });
+    });
+
+    socket.on("ice_candidate", (data) => {
+      io.to(data.to).emit("ice_candidate", { candidate: data.candidate });
     });
 
     socket.on("end_call", (data) => {
       io.to(data.to).emit("call_ended");
+    });
+
+    socket.on("disconnect", () => {
+      console.log("User disconnected:", socket.id);
     });
   });
 

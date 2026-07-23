@@ -16,8 +16,7 @@ const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/users");
 
 const app = express();
-const server = http.createServer(app); // needed for Socket.io
-
+const server = http.createServer(app);
 // Init Socket.io
 initSocket(server);
 
