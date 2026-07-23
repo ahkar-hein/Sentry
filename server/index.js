@@ -21,10 +21,12 @@ const server = http.createServer(app);
 initSocket(server);
 
 app.use(cors({
-  origin: "*",
-  credentials: true
+  origin: [
+    "http://localhost:5173",
+    "https://sentry-beige-zeta.vercel.app",
+  ],
+  credentials: true,
 }));
-app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
