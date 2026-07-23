@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
@@ -5,46 +6,94 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
+    setMenuOpen(false);
   };
 
   const isActive = (path) => location.pathname === path;
 
-  const linkStyle = (path) => ({
-    color: isActive(path) ? "#fff" : "#94a3b8",
-    textDecoration: "none",
-    fontSize: 14,
-    fontWeight: isActive(path) ? 600 : 400,
-    padding: "4px 8px",
-    borderRadius: 6,
-    background: isActive(path) ? "rgba(255,255,255,0.1)" : "transparent",
-  });
+  const links = [
+    { to: "/home", label: "Home" },
+    { to: "/explore", label: "Explore" },
+    { to: "/chat", label: "Chat" },
+    { to: "/ai", label: "🤖 AI" },
+  ];
 
   return (
-    <nav style={{ background: "#0f172a", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 20 }}>🛡️</span>
-        <span style={{ color: "#fff", fontWeight: 700, fontSize: 18 }}>Sentry</span>
-      </div>
+    <>
+      <nav className="navbar">
+        {/* Brand */}
+        <Link to="/home" className="navbar-brand">
+          <span>🛡️</span>
+          <span>Sentry</span>
+        </Link>
 
+        {/* Desktop links */}
+        {user && (
+          <div className="navbar-links">
+            {links.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`navbar-link ${isActive(link.to) ? "active" : ""}`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <span style={{ color: "#475569", fontSize: 13, margin: "0 4px" }}>
+              {user.homeCity}
+            </span>
+            <button
+              onClick={handleLogout}
+              style={{ padding: "6px 14px", background: "transparent", border: "1px solid #475569", color: "#94a3b8", borderRadius: 6, cursor: "pointer", fontSize: 13 }}
+            >
+              Logout
+            </button>
+          </div>
+        )}
+
+        {/* Mobile hamburger */}
+        {user && (
+          <button
+            className="hamburger"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span style={{ transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
+            <span style={{ opacity: menuOpen ? 0 : 1 }} />
+            <span style={{ transform: menuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
+          </button>
+        )}
+      </nav>
+
+      {/* Mobile dropdown menu */}
       {user && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Link to="/home" style={linkStyle("/home")}>Home</Link>
-          <Link to="/explore" style={linkStyle("/explore")}>Explore</Link>
-          <Link to="/chat" style={linkStyle("/chat")}>Chat</Link>
-          <Link to="/ai" style={linkStyle("/ai")}>🤖 AI</Link>
-          <span style={{ color: "#475569", fontSize: 13, marginLeft: 8 }}>{user.homeCity}</span>
+        <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`navbar-link ${isActive(link.to) ? "active" : ""}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <div style={{ padding: "8px 16px", color: "#64748b", fontSize: 13 }}>
+            📍 {user.homeCity}
+          </div>
           <button
             onClick={handleLogout}
-            style={{ padding: "6px 14px", background: "transparent", border: "1px solid #475569", color: "#94a3b8", borderRadius: 6, cursor: "pointer", fontSize: 13, marginLeft: 4 }}
+            style={{ margin: "4px 16px", padding: "10px 16px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
           >
             Logout
           </button>
         </div>
       )}
-    </nav>
+    </>
   );
 }

@@ -11,6 +11,7 @@ const POST_TYPES = [
 export default function CreatePost({ user, onPostCreated }) {
   const [type, setType] = useState("status");
   const [content, setContent] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
   const [address, setAddress] = useState("");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -19,15 +20,13 @@ export default function CreatePost({ user, onPostCreated }) {
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
-  // When user picks a file show a preview
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (!selected) return;
     setFile(selected);
-    setPreview(URL.createObjectURL(selected)); // create local preview URL
+    setPreview(URL.createObjectURL(selected));
   };
 
-  // Remove selected file
   const removeFile = () => {
     setFile(null);
     setPreview(null);
@@ -38,39 +37,31 @@ export default function CreatePost({ user, onPostCreated }) {
     if (!content.trim() && !file) return;
     setLoading(true);
     setError("");
-
     try {
-      let mediaUrl = "";
+      let mediaUrlFinal = "";
       let postType = type;
 
-      // If file selected upload it to Cloudinary first
       if (file && (type === "photo" || type === "video")) {
         setUploading(true);
         const formData = new FormData();
         formData.append("file", file);
-
         const { data: uploadData } = await api.post("/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-
-        mediaUrl = uploadData.url;
-        postType = uploadData.type; // "photo" or "video" from server
+        mediaUrlFinal = uploadData.url;
+        postType = uploadData.type;
         setUploading(false);
       }
 
-      // Create the post
-      const payload = {
+      const { data } = await api.post("/posts", {
         content,
         type: postType,
         city: user.homeCity,
-        mediaUrl,
+        mediaUrl: mediaUrlFinal,
         location: address ? { address } : {},
-      };
+      });
 
-      const { data } = await api.post("/posts", payload);
       onPostCreated(data);
-
-      // Reset form
       setContent("");
       setFile(null);
       setPreview(null);
@@ -85,51 +76,45 @@ export default function CreatePost({ user, onPostCreated }) {
   };
 
   return (
-    <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
-
-      {/* Post type selector */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+    <div className="card">
+      {/* Type selector */}
+      <div className="post-type-selector">
         {POST_TYPES.map((t) => (
           <button
             key={t.id}
             onClick={() => { setType(t.id); removeFile(); }}
-            style={{ padding: "6px 12px", borderRadius: 20, border: "1px solid", borderColor: type === t.id ? "#1d4ed8" : "#e5e7eb", background: type === t.id ? "#eff6ff" : "#fff", color: type === t.id ? "#1d4ed8" : "#6b7280", fontSize: 13, cursor: "pointer" }}
+            className={`post-type-btn ${type === t.id ? "active" : ""}`}
           >
             {t.icon} {t.label}
           </button>
         ))}
       </div>
 
-      {/* Text content */}
+      {/* Content */}
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={`What's happening in ${user.homeCity}?`}
         rows={3}
-        style={{ width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14, resize: "none", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }}
+        className="input"
+        style={{ marginBottom: 8 }}
       />
 
       {/* Photo upload */}
       {type === "photo" && (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginBottom: 8 }}>
           {!preview ? (
             <div
               onClick={() => fileInputRef.current?.click()}
-              style={{ border: "2px dashed #e5e7eb", borderRadius: 8, padding: 24, textAlign: "center", cursor: "pointer", color: "#9ca3af", fontSize: 14 }}
+              style={{ border: "2px dashed #e5e7eb", borderRadius: 8, padding: 20, textAlign: "center", cursor: "pointer", color: "#9ca3af", fontSize: 13 }}
             >
-              <div style={{ fontSize: 32, marginBottom: 8 }}>📷</div>
-              Click to upload a photo
-              <div style={{ fontSize: 12, marginTop: 4 }}>JPG, PNG, GIF, WEBP up to 50MB</div>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
+              Tap to upload a photo
             </div>
           ) : (
             <div style={{ position: "relative" }}>
-              <img src={preview} alt="preview" style={{ width: "100%", borderRadius: 8, maxHeight: 300, objectFit: "cover" }} />
-              <button
-                onClick={removeFile}
-                style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 14 }}
-              >
-                ✕
-              </button>
+              <img src={preview} alt="preview" style={{ width: "100%", borderRadius: 8, maxHeight: 280, objectFit: "cover" }} />
+              <button onClick={removeFile} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer" }}>✕</button>
             </div>
           )}
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
@@ -138,59 +123,53 @@ export default function CreatePost({ user, onPostCreated }) {
 
       {/* Video upload */}
       {type === "video" && (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginBottom: 8 }}>
           {!preview ? (
             <div
               onClick={() => fileInputRef.current?.click()}
-              style={{ border: "2px dashed #e5e7eb", borderRadius: 8, padding: 24, textAlign: "center", cursor: "pointer", color: "#9ca3af", fontSize: 14 }}
+              style={{ border: "2px dashed #e5e7eb", borderRadius: 8, padding: 20, textAlign: "center", cursor: "pointer", color: "#9ca3af", fontSize: 13 }}
             >
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🎥</div>
-              Click to upload a video
-              <div style={{ fontSize: 12, marginTop: 4 }}>MP4, MOV, AVI up to 50MB</div>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>🎥</div>
+              Tap to upload a video
             </div>
           ) : (
             <div style={{ position: "relative" }}>
-              <video src={preview} controls style={{ width: "100%", borderRadius: 8, maxHeight: 300 }} />
-              <button
-                onClick={removeFile}
-                style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 14 }}
-              >
-                ✕
-              </button>
+              <video src={preview} controls style={{ width: "100%", borderRadius: 8, maxHeight: 280 }} />
+              <button onClick={removeFile} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer" }}>✕</button>
             </div>
           )}
           <input ref={fileInputRef} type="file" accept="video/*" onChange={handleFileChange} style={{ display: "none" }} />
         </div>
       )}
 
-      {/* Location input */}
+      {/* Location */}
       {type === "location" && (
         <input
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          placeholder="Enter address or location name..."
-          style={{ width: "100%", padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, marginTop: 8, outline: "none", boxSizing: "border-box" }}
+          placeholder="Enter address or location..."
+          className="input"
+          style={{ marginBottom: 8 }}
         />
       )}
 
-      {error && <p style={{ color: "#ef4444", fontSize: 13, marginTop: 8 }}>{error}</p>}
+      {error && <p style={{ color: "#ef4444", fontSize: 13, marginBottom: 8 }}>{error}</p>}
 
-      {/* Upload progress */}
       {uploading && (
-        <div style={{ marginTop: 8, padding: "8px 12px", background: "#eff6ff", borderRadius: 8, fontSize: 13, color: "#1d4ed8" }}>
-          ⬆️ Uploading to Cloudinary...
+        <div style={{ padding: "8px 12px", background: "#eff6ff", borderRadius: 8, fontSize: 13, color: "#1d4ed8", marginBottom: 8 }}>
+          ⬆️ Uploading...
         </div>
       )}
 
-      {/* Submit */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 12, color: "#9ca3af" }}>
           Posting to <strong>{user.homeCity}</strong>
         </span>
         <button
           onClick={handleSubmit}
           disabled={loading || (!content.trim() && !file)}
-          style={{ padding: "8px 20px", background: loading || (!content.trim() && !file) ? "#93c5fd" : "#1d4ed8", color: "#fff", border: "none", borderRadius: 8, cursor: loading ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 14 }}
+          className="btn btn-primary"
+          style={{ padding: "8px 20px" }}
         >
           {uploading ? "Uploading..." : loading ? "Posting..." : "Post"}
         </button>

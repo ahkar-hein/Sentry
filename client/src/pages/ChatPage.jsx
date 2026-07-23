@@ -6,7 +6,7 @@ import NeighborsList from "../components/chat/NeighborsList";
 
 export default function ChatPage() {
   const { user } = useAuth();
-  const [tab, setTab] = useState("group"); // group | neighbors | private
+  const [tab, setTab] = useState("group");
   const [selectedNeighbor, setSelectedNeighbor] = useState(null);
 
   const handleSelectNeighbor = (neighbor) => {
@@ -20,40 +20,29 @@ export default function ChatPage() {
   };
 
   return (
-    <div style={{ maxWidth: 700, margin: "0 auto", padding: "24px 16px", height: "calc(100vh - 65px)", display: "flex", flexDirection: "column" }}>
-
-      {/* Tabs */}
+    <div className="container" style={{ paddingBottom: 0 }}>
       {tab !== "private" && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          <button
-            onClick={() => setTab("group")}
-            style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 14, background: tab === "group" ? "#1d4ed8" : "#f3f4f6", color: tab === "group" ? "#fff" : "#374151" }}
-          >
-            💬 Community Chat
+        <div className="tabs">
+          <button className={`tab ${tab === "group" ? "active" : ""}`} onClick={() => setTab("group")}>
+            💬 Community
           </button>
-          <button
-            onClick={() => setTab("neighbors")}
-            style={{ flex: 1, padding: "10px 0", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 14, background: tab === "neighbors" ? "#1d4ed8" : "#f3f4f6", color: tab === "neighbors" ? "#fff" : "#374151" }}
-          >
+          <button className={`tab ${tab === "neighbors" ? "active" : ""}`} onClick={() => setTab("neighbors")}>
             👥 Neighbors
           </button>
         </div>
       )}
 
-      {/* Content */}
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        {tab === "group" && <GroupChat user={user} />}
-        {tab === "neighbors" && (
-          <NeighborsList user={user} onSelectNeighbor={handleSelectNeighbor} />
-        )}
-        {tab === "private" && selectedNeighbor && (
-          <PrivateChat
-            user={user}
-            recipient={selectedNeighbor}
-            onBack={handleBackFromPrivate}
-          />
-        )}
-      </div>
+      {tab === "group" && <GroupChat user={user} />}
+      {tab === "neighbors" && (
+        <NeighborsList user={user} onSelectNeighbor={handleSelectNeighbor} />
+      )}
+      {tab === "private" && selectedNeighbor && (
+        <PrivateChat
+          user={user}
+          recipient={selectedNeighbor}
+          onBack={handleBackFromPrivate}
+        />
+      )}
     </div>
   );
 }
