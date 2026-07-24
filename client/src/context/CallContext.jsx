@@ -10,44 +10,67 @@ export function CallProvider({ children, user }) {
   const [activeCall, setActiveCall] = useState(null);
   const remoteAudioRef = useRef(null);
 
-  useEffect(() => {
-    if (!user) return;
+useEffect(() => {
+  if (!user) return;
 
-    // Incoming call from another user
-    socket.on("incoming_call", (data) => {
-      if (!activeCall) setIncomingCall(data);
-    });
+  socket.on("incoming_call", (data) => {
+    if (!activeCall) setIncomingCall(data);
+  });
 
-    // Call ended by other person
-    socket.on("call_ended", () => {
-      setActiveCall(null);
-      setIncomingCall(null);
-    });
+  // Handle call ended from either side
+  socket.on("call_ended", () => {
+    setActiveCall(null);
+    setIncomingCall(null);
+  });
 
-    return () => {
-      socket.off("incoming_call");
-      socket.off("call_ended");
-    };
-  }, [user, activeCall]);
+  // Handle call answered — update status for caller
+  socket.on("call_answered", () => {
+    // caller side handles this in VoiceCall.jsx
+  });
+
+  return () => {
+    socket.off("incoming_call");
+    socket.off("call_ended");
+    socket.off("call_answered");
+  };
+}, [user, activeCall]);
 
   const startCall = (recipient) => {
     setActiveCall({ recipient });
   };
 
-  const handleAcceptCall = (pc, stream) => {
-    setIncomingCall(null);
-
-    // Play remote audio when track arrives
-    pc.ontrack = (event) => {
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = event.streams[0];
-        remoteAudioRef.current.play().catch(console.error);
-      }
-    };
+const handleAcceptCall = (pc, stream) => {
+  // Play remote audio when track arrives
+  pc.ontrack = (event) => {
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = event.streams[0];
+      remoteAudioRef.current.play().catch(console.error);
+    }
   };
 
+  // Show active call screen for receiver
+  setIncomingCall(null);
+  setActiveCall({
+    recipient: {
+      _id: incomingCall.from,
+      name: incomingCall.callerName,
+    },
+    isReceiver: true,
+    pc,
+    stream,
+  });
+};
+
   const handleRejectCall = () => setIncomingCall(null);
-  const handleEndCall = () => setActiveCall(null);
+  const handleEndCall = () => {
+  if (activeCall?.stream) {
+    activeCall.stream.getTracks().forEach((t) => t.stop());
+  }
+  if (activeCall?.pc) {
+    activeCall.pc.close();
+  }
+  setActiveCall(null);
+};
 
   return (
     <CallContext.Provider value={{ startCall }}>
@@ -67,13 +90,14 @@ export function CallProvider({ children, user }) {
       )}
 
       {/* Active outgoing call screen */}
-      {activeCall && (
-        <VoiceCall
-          user={user}
-          recipient={activeCall.recipient}
-          onEndCall={handleEndCall}
-        />
-      )}
+{activeCall && (
+  <VoiceCall
+    user={user}
+    recipient={activeCall.recipient}
+    onEndCall={handleEndCall}
+    isReceiver={activeCall.isReceiver}
+  />
+)}
     </CallContext.Provider>
   );
 }
