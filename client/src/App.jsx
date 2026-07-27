@@ -9,9 +9,16 @@ import ExplorePage from "./pages/ExplorePage";
 import ChatPage from "./pages/ChatPage";
 import AIPage from "./pages/AIPage";
 
+// For protected pages — must be logged in
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
+};
+
+// For login/register — redirect to home if ALREADY logged in
+const PublicRoute = ({ children }) => {
+  const { user } = useAuth();
+  return user ? <Navigate to="/home" /> : children;
 };
 
 function AppRoutes() {
@@ -21,12 +28,19 @@ function AppRoutes() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Navigate to={user ? "/home" : "/login"} />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+
+        {/* Public routes — redirect to home if logged in */}
+        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+
+        {/* Protected routes — redirect to login if not logged in */}
         <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
         <Route path="/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
+
+        {/* Catch all — redirect unknown routes */}
+        <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
       </Routes>
     </CallProvider>
   );
