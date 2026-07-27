@@ -90,14 +90,14 @@ const handleAcceptCall = (pc, stream) => {
       )}
 
       {/* Active outgoing call screen */}
-{activeCall && (
-  <VoiceCall
-    user={user}
-    recipient={activeCall.recipient}
-    onEndCall={handleEndCall}
-    isReceiver={activeCall.isReceiver}
-  />
-)}
+      {activeCall && (
+        <VoiceCall
+          user={user}
+          recipient={activeCall.recipient}
+          onEndCall={handleEndCall}
+          isReceiver={activeCall.isReceiver}
+        />
+      )}
     </CallContext.Provider>
   );
 }
