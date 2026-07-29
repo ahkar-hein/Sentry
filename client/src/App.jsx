@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage";
 import ExplorePage from "./pages/ExplorePage";
 import ChatPage from "./pages/ChatPage";
 import AIPage from "./pages/AIPage";
+import ProfilePage from "./pages/ProfilePage";
 
 // For protected pages — must be logged in
 const ProtectedRoute = ({ children }) => {
@@ -38,7 +39,8 @@ function AppRoutes() {
         <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
         <Route path="/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
-
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        
         {/* Catch all — redirect unknown routes */}
         <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
       </Routes>

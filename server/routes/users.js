@@ -5,19 +5,6 @@ const Alert = require("../models/Alert");
 const { protect } = require("../middleware/auth");
 const router = express.Router();
 
-// GET /api/users/neighbors/:city — get all users in a city
-router.get("/neighbors/:city", protect, async (req, res) => {
-  try {
-    const users = await User.find({
-      homeCity: new RegExp(`^${req.params.city}$`, "i"),
-      _id: { $ne: req.user.id },
-    }).select("name avatar homeCity isOnline");
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
 // GET /api/users/profile — get my profile with posts and alerts
 router.get("/profile", protect, async (req, res) => {
   try {
@@ -55,4 +42,17 @@ router.put("/profile", protect, async (req, res) => {
   }
 });
 
+
+// GET /api/users/neighbors/:city — get all users in a city
+router.get("/neighbors/:city", protect, async (req, res) => {
+  try {
+    const users = await User.find({
+      homeCity: new RegExp(`^${req.params.city}$`, "i"),
+      _id: { $ne: req.user.id },
+    }).select("name avatar homeCity isOnline");
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 module.exports = router;

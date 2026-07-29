@@ -21,6 +21,7 @@ export default function Navbar() {
     { to: "/explore", label: "Explore" },
     { to: "/chat", label: "Chat" },
     { to: "/ai", label: "🤖 AI" },
+    { to: "/profile", label: `👤 ${user.name}` },
   ];
 
   return (
