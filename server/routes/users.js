@@ -42,6 +42,23 @@ router.put("/profile", protect, async (req, res) => {
   }
 });
 
+// DELETE /api/users/account — delete my account and all my data
+router.delete("/account", protect, async (req, res) => {
+  try {
+    // Delete all user's posts
+    await Post.deleteMany({ author: req.user.id });
+
+    // Delete all user's alerts
+    await Alert.deleteMany({ reporter: req.user.id });
+
+    // Delete the user
+    await User.findByIdAndDelete(req.user.id);
+
+    res.json({ message: "Account deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // GET /api/users/neighbors/:city — get all users in a city
 router.get("/neighbors/:city", protect, async (req, res) => {
@@ -55,4 +72,5 @@ router.get("/neighbors/:city", protect, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 module.exports = router;

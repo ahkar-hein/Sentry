@@ -5,6 +5,7 @@ const {
   likePost,
   getComments,
   addComment,
+  deletePost,
 } = require("../controllers/postController");
 const { protect } = require("../middleware/auth");
 const { requireHomeCommunity } = require("../middleware/communityAccess");
@@ -15,5 +16,6 @@ router.post("/", protect, requireHomeCommunity, createPost); // home city only
 router.put("/:id/like", protect, likePost);                  // must be logged in
 router.get("/:id/comments", getComments);                    // anyone can read
 router.post("/:id/comments", protect, addComment);           // must be logged in
+router.delete("/:id", protect, deletePost);
 
 module.exports = router;

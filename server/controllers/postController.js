@@ -100,6 +100,26 @@ const addComment = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+  // DELETE /api/posts/:id — delete own post
 };
+const deletePost = async (req, res) => {
+    try {
+      const post = await Post.findById(req.params.id);
 
-module.exports = { getPosts, createPost, likePost, getComments, addComment };
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      // Only the author can delete their post
+      if (post.author.toString() !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to delete this post" });
+      }
+
+      await Post.findByIdAndDelete(req.params.id);
+      res.json({ message: "Post deleted" });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+
+module.exports = { getPosts, createPost, likePost, getComments, addComment, deletePost, };
