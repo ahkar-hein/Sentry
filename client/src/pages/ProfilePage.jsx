@@ -20,15 +20,23 @@ export default function ProfilePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async () => {
-    try {
-      const { data } = await api.put("/users/profile", form);
-      setProfile({ ...profile, user: data });
-      setEditing(false);
-    } catch (err) {
-      console.error("Update failed:", err);
-    }
-  };
+const handleSave = async () => {
+  try {
+    const { data } = await api.put("/users/profile", form);
+    setProfile({ ...profile, user: data });
+
+    // Update the global user in AuthContext
+    const updatedUser = { ...user, name: data.name, homeCity: data.homeCity };
+    setUser(updatedUser);
+
+    // Update localStorage so it persists on refresh
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    setEditing(false);
+  } catch (err) {
+    console.error("Update failed:", err);
+  }
+};
 
   if (loading) return (
     <div className="container">
