@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 
 export default function ProfilePage() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -20,23 +20,49 @@ export default function ProfilePage() {
       .finally(() => setLoading(false));
   }, []);
 
-const handleSave = async () => {
-  try {
-    const { data } = await api.put("/users/profile", form);
-    setProfile({ ...profile, user: data });
+  // Save edited profile
+  const handleSave = async () => {
+    try {
+      const { data } = await api.put("/users/profile", form);
+      setProfile({ ...profile, user: data });
 
-    // Update the global user in AuthContext
-    const updatedUser = { ...user, name: data.name, homeCity: data.homeCity };
-    setUser(updatedUser);
+      // Update global user so navbar updates too
+      const updatedUser = { ...user, name: data.name, homeCity: data.homeCity };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
 
-    // Update localStorage so it persists on refresh
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+      setEditing(false);
+    } catch (err) {
+      console.error("Update failed:", err);
+    }
+  };
 
-    setEditing(false);
-  } catch (err) {
-    console.error("Update failed:", err);
-  }
-};
+  // Delete a single post
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Delete this post? This cannot be undone.")) return;
+    try {
+      await api.delete(`/posts/${postId}`);
+      setProfile({
+        ...profile,
+        posts: profile.posts.filter((p) => p._id !== postId),
+        stats: { ...profile.stats, totalPosts: profile.stats.totalPosts - 1 },
+      });
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
+  // Delete entire account
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Delete your account? This will permanently delete all your posts, alerts, and data. This CANNOT be undone.")) return;
+    if (!window.confirm("Are you absolutely sure? This is your last chance.")) return;
+    try {
+      await api.delete("/users/account");
+      logout();
+    } catch (err) {
+      console.error("Delete account failed:", err);
+    }
+  };
 
   if (loading) return (
     <div className="container">
@@ -50,6 +76,7 @@ const handleSave = async () => {
 
   return (
     <div className="container">
+
       {/* Profile header card */}
       <div className="card" style={{ textAlign: "center", padding: 24 }}>
         <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#1d4ed8", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 32, margin: "0 auto 16px" }}>
@@ -128,7 +155,15 @@ const handleSave = async () => {
           ) : (
             posts.map((post) => (
               <div key={post._id} className="card">
-                <p style={{ margin: "0 0 8px", fontSize: 14 }}>{post.content}</p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <p style={{ margin: "0 0 8px", fontSize: 14, flex: 1 }}>{post.content}</p>
+                  <button
+                    onClick={() => handleDeletePost(post._id)}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", fontSize: 16, padding: 4, marginLeft: 8 }}
+                  >
+                    🗑️
+                  </button>
+                </div>
                 {post.mediaUrl && (
                   post.type === "video"
                     ? <video src={post.mediaUrl} controls style={{ width: "100%", borderRadius: 8, maxHeight: 200 }} />
@@ -166,6 +201,23 @@ const handleSave = async () => {
           )}
         </div>
       )}
+
+      {/* Danger Zone */}
+      <div className="card" style={{ border: "1px solid #fca5a5", marginTop: 24 }}>
+        <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#dc2626", fontSize: 15 }}>
+          ⚠️ Danger Zone
+        </p>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#6b7280" }}>
+          Permanently delete your account and all your data. This cannot be undone.
+        </p>
+        <button
+          onClick={handleDeleteAccount}
+          style={{ padding: "10px 16px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 }}
+        >
+          Delete My Account
+        </button>
+      </div>
+
     </div>
   );
 }
