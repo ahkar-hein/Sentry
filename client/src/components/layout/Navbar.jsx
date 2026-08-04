@@ -16,13 +16,14 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
 
-  const links = [
+  const links = user ? [
     { to: "/home", label: "Home" },
     { to: "/explore", label: "Explore" },
     { to: "/chat", label: "Chat" },
     { to: "/ai", label: "🤖 AI" },
     { to: "/profile", label: `👤 ${user.name}` },
-  ];
+  ] 
+  : [];
 
   return (
     <>
